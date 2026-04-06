@@ -71,6 +71,12 @@ export default function UpriserFeederPillarPage() {
       const mk = L.circleMarker([r.la, r.ln], { radius: 4, fillColor: c, fillOpacity: 1, color: c, weight: 1 });
       mk.on('mouseover', function(this: any) { this.setStyle({ radius: 7, weight: 2 }); });
       mk.on('mouseout', function(this: any) { this.setStyle({ radius: 4, weight: 1 }); });
+      const photos = Array.isArray(r.ph) ? r.ph : (r.ph ? [r.ph] : []);
+      const photoHTML = photos.length
+        ? `<div style="margin-top:6px;display:flex;gap:4px;flex-wrap:wrap">${photos.map((id: string, pi: number) =>
+            `<a href="https://drive.google.com/file/d/${id}/view" target="_blank" title="Photo ${pi + 1}"><img src="https://lh3.googleusercontent.com/d/${id}=w150" style="width:${photos.length === 1 ? '200' : '90'}px;height:${photos.length === 1 ? 'auto' : '70'}px;object-fit:cover;border-radius:6px;border:1px solid #1a2535" onerror="this.style.display='none'"></a>`
+          ).join('')}</div>`
+        : '';
       mk.bindPopup(`<div style="font-family:Inter,sans-serif;font-size:12px;min-width:250px">
         <div style="font-weight:700;color:${c};border-bottom:1px solid #1a2535;padding-bottom:4px;margin-bottom:4px">${r.dt || 'Unknown DT'}</div>
         <table style="width:100%;font-size:11px;line-height:1.7">
@@ -86,7 +92,8 @@ export default function UpriserFeederPillarPage() {
           <tr><td style="color:#7a8a9e"><b>Field Officer</b></td><td>${r.fo || '-'}</td></tr>
           <tr><td style="color:#7a8a9e"><b>Timestamp</b></td><td>${r.ts || '-'}</td></tr>
         </table>
-      </div>`);
+        ${photoHTML}
+      </div>`, { maxWidth: 600 });
       mk.addTo(lg);
       count++;
     });

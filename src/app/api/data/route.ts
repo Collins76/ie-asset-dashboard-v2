@@ -12,7 +12,8 @@ const BANDS = ['Band A', 'Band B', 'Band C', 'Band D', 'Band E', 'Unknown'];
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function toCompact(r: any): any[] {
   const buIdx = Math.max(0, BUS.findIndex((b) => b === String(r.bu || '').toUpperCase()));
-  const bandIdx = Math.max(0, BANDS.findIndex((b) => b === String(r.srt || '')));
+  const bandIdx = BANDS.findIndex((b) => b === String(r.srt || ''));
+
   const fv = Number(r.fv || 11);
   const voltIdx = fv >= 33 ? 1 : 0;
 
@@ -70,7 +71,7 @@ export async function GET(request: Request) {
         });
       }
     } catch {
-      // Blob not configured or empty, fall through to Supabase
+      // Blob not configured, fall through
     }
 
     // Fallback: fetch from Supabase
@@ -81,16 +82,22 @@ export async function GET(request: Request) {
     const res = await fetch(url, { next: { revalidate: 3600 } });
     const text = await res.text();
 
-    // The Supabase JS files assign to a global variable. Extract the JSON.
-    const jsonMatch = text.match(/=\s*(\[[\s\S]*\])\s*;?\s*$/);
+    const jsonMatch = text.match(/=\s*(\[[\s\S]*?\])\s*;?\s*$/);
     if (!jsonMatch) {
+      // Try as GeoJSON object
+      const objMatch = text.match(/=\s*(\{[\s\S]*\})\s*;?\s*$/);
+      if (objMatch) {
+        const data = JSON.parse(objMatch[1]);
+        return NextResponse.json({ data, source: 'supabase' }, {
+          headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600' },
+        });
+      }
       return NextResponse.json({ error: 'Failed to parse data' }, { status: 500 });
     }
 
     const rawData = JSON.parse(jsonMatch[1]);
 
-    // For dashboard data, convert to compact format server-side to reduce payload
-    // from ~15MB to ~3MB
+    // Convert dashboard data to compact format server-side
     let data;
     if (type === 'dashboard' && rawData.length > 0 && !Array.isArray(rawData[0])) {
       data = rawData.map(toCompact);
