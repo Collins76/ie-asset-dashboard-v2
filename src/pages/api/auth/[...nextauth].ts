@@ -2,6 +2,7 @@ import NextAuth from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 
 export default NextAuth({
+  debug: true,
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID || process.env.AUTH_GOOGLE_ID || '',
@@ -20,6 +21,14 @@ export default NextAuth({
         (session as any).role = adminEmails.includes(session.user.email.toLowerCase()) ? 'admin' : 'viewer';
       }
       return session;
+    },
+  },
+  logger: {
+    error(code, metadata) {
+      console.error('NEXTAUTH_ERROR', code, JSON.stringify(metadata, null, 2));
+    },
+    warn(code) {
+      console.warn('NEXTAUTH_WARN', code);
     },
   },
 });
