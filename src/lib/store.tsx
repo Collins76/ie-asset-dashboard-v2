@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import type { TransformerRecord, FilterState, Aggregation } from '@/types/dashboard';
-import { parseRecords, applyFilters, computeAggregation, getFilterOptions, emptyFilters } from './data';
+import { parseRecords, applyFilters, computeAggregation, getFilterOptions, emptyFilters } from '@/lib/data';
 
 interface DashboardContextValue {
   allData: TransformerRecord[];
