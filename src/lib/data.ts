@@ -27,6 +27,94 @@ export function expandRecord(r: CompactRecord): TransformerRecord {
   };
 }
 
+// Convert Supabase JSON object format to TransformerRecord
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function convertSupabaseRecord(r: any): TransformerRecord {
+  // Map string BU to index
+  const buStr = String(r.bu || '').toUpperCase();
+  const buIdx = BUS.findIndex((b) => b === buStr);
+
+  // Map SRT band string to index
+  const bandStr = String(r.srt || '');
+  const bandIdx = BANDS.findIndex((b) => b === bandStr);
+
+  // Map voltage
+  const fv = Number(r.fv || 11);
+  const voltIdx = fv >= 33 ? 1 : 0;
+
+  // Map metering status string to index
+  const msStr = String(r.ms || '').toUpperCase();
+  let meterIdx = 2; // UNMETERED default
+  if (msStr.includes('METERED') && !msStr.includes('UN')) {
+    meterIdx = msStr.includes('EST') ? 1 : 0;
+  }
+
+  // Map maintenance/device status to index
+  const dsStr = String(r.ds || r.maint || '').toUpperCase();
+  let maintIdx = 4; // Unknown
+  if (dsStr.includes('ACTIVE') || dsStr.includes('HEALTH')) maintIdx = 0;
+  else if (dsStr.includes('FAULT')) maintIdx = 1;
+  else if (dsStr.includes('OUT')) maintIdx = 2;
+  else if (dsStr.includes('INACT')) maintIdx = 3;
+
+  // Map ownership
+  const ownStr = String(r.own || '').toUpperCase();
+  const ownIdx = ownStr.includes('PRIV') ? 1 : 0;
+
+  // Map installation
+  const ipStr = String(r.ip || '').toUpperCase();
+  let instIdx = 2; // Unknown
+  if (ipStr.includes('GROUND')) instIdx = 0;
+  else if (ipStr.includes('POLE')) instIdx = 1;
+
+  // Map commissioning
+  const cosStr = String(r.cos || '').toUpperCase();
+  let commIdx = 2; // Unknown
+  if (cosStr === 'COMMISSIONED') commIdx = 0;
+  else if (cosStr.includes('NOT')) commIdx = 1;
+
+  // Extract year from date
+  const cd = String(r.cd || '');
+  const year = cd.length >= 4 ? cd.slice(0, 4) : '';
+
+  return {
+    bu: buIdx >= 0 ? buIdx : 0,
+    band: bandIdx >= 0 ? bandIdx : 5,
+    capacity: Number(r.cap || 0),
+    voltage: voltIdx,
+    metering: meterIdx,
+    maintenance: maintIdx,
+    ownership: ownIdx,
+    lat: Number(r.lat || 0),
+    lon: Number(r.lng || r.lon || 0),
+    name: String(r.nom || r.name || ''),
+    dtNumber: String(r.dt || ''),
+    utName: String(r.nut || r.ut || ''),
+    feeder: String(r.fn || r.feeder || ''),
+    installation: instIdx,
+    customer: String(r.cust || ''),
+    address: String(r.addr || ''),
+    meterNumber: String(r.mn || ''),
+    commissioning: commIdx,
+    commissionDate: year,
+    state: String(r.st || ''),
+  };
+}
+
+// Detect data format and parse accordingly
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function parseRecords(data: any[]): TransformerRecord[] {
+  if (!data || data.length === 0) return [];
+
+  // Check if first record is an array (compact) or object (Supabase JSON)
+  const first = data[0];
+  if (Array.isArray(first)) {
+    return data.map((r) => expandRecord(r as CompactRecord));
+  }
+  // Object format from Supabase
+  return data.map(convertSupabaseRecord);
+}
+
 // Normalize UT names
 export function normUT(name: string): string {
   return name?.trim().toUpperCase() || '';

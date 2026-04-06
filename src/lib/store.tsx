@@ -2,8 +2,7 @@
 
 import { createContext, useContext, useState, useCallback, useEffect, type ReactNode } from 'react';
 import type { TransformerRecord, FilterState, Aggregation } from '@/types/dashboard';
-import type { CompactRecord } from '@/types/dashboard';
-import { expandRecord, applyFilters, computeAggregation, getFilterOptions, emptyFilters } from './data';
+import { parseRecords, applyFilters, computeAggregation, getFilterOptions, emptyFilters } from './data';
 
 interface DashboardContextValue {
   allData: TransformerRecord[];
@@ -34,8 +33,8 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         const res = await fetch('/api/data');
         if (!res.ok) throw new Error('Failed to fetch data');
         const json = await res.json();
-        const compactData: CompactRecord[] = json.data || [];
-        const expanded = compactData.map(expandRecord);
+        const rawData = json.data || [];
+        const expanded = parseRecords(rawData);
         setAllData(expanded);
         setFilteredData(expanded);
         setAggregation(computeAggregation(expanded));
