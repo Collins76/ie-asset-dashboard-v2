@@ -8,11 +8,23 @@ export const authConfig: NextAuthConfig = {
     {
       id: 'google',
       name: 'Google',
-      type: 'oidc',
-      issuer: 'https://accounts.google.com',
+      type: 'oauth',
+      authorization: {
+        url: 'https://accounts.google.com/o/oauth2/v2/auth',
+        params: { scope: 'openid email profile' },
+      },
+      token: 'https://oauth2.googleapis.com/token',
+      userinfo: 'https://openidconnect.googleapis.com/v1/userinfo',
       clientId: process.env.AUTH_GOOGLE_ID || process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.AUTH_GOOGLE_SECRET || process.env.GOOGLE_CLIENT_SECRET,
-      checks: ['state'],
+      profile(profile) {
+        return {
+          id: profile.sub,
+          name: profile.name,
+          email: profile.email,
+          image: profile.picture,
+        };
+      },
     },
   ],
   trustHost: true,
