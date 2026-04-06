@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
 
 interface KPICardProps {
   title: string;
@@ -10,11 +9,17 @@ interface KPICardProps {
   icon: React.ReactNode;
   color: 'cyan' | 'green' | 'amber' | 'red' | 'pink';
   percentage?: number;
-  secondaryLabel?: string;
-  secondaryValue?: number;
   delay?: number;
   formatValue?: (n: number) => string;
 }
+
+const COLOR_HEX: Record<string, string> = {
+  cyan: '#06B6D4',
+  green: '#10B981',
+  amber: '#F59E0B',
+  red: '#EF4444',
+  pink: '#EC4899',
+};
 
 function useCountUp(target: number, duration = 1200) {
   const [count, setCount] = useState(0);
@@ -31,7 +36,6 @@ function useCountUp(target: number, duration = 1200) {
     function tick(now: number) {
       const elapsed = now - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      // Ease out cubic
       const eased = 1 - Math.pow(1 - progress, 3);
       setCount(Math.round(start + (target - start) * eased));
       if (progress < 1) raf = requestAnimationFrame(tick);
@@ -45,62 +49,83 @@ function useCountUp(target: number, duration = 1200) {
 }
 
 export default function KPICard({
-  title, value, subtitle, icon, color, percentage,
-  secondaryLabel, secondaryValue, delay = 0, formatValue,
+  title, value, subtitle, icon, color, percentage, delay = 0, formatValue,
 }: KPICardProps) {
   const animatedValue = useCountUp(value);
-  const gradientClass = `kpi-gradient-${color}`;
-
-  const colorMap = {
-    cyan: 'text-cyan-400',
-    green: 'text-emerald-400',
-    amber: 'text-amber-400',
-    red: 'text-red-400',
-    pink: 'text-pink-400',
-  };
-
-  const bgMap = {
-    cyan: 'bg-cyan-400/10',
-    green: 'bg-emerald-400/10',
-    amber: 'bg-amber-400/10',
-    red: 'bg-red-400/10',
-    pink: 'bg-pink-400/10',
-  };
+  const hex = COLOR_HEX[color];
+  const delayClass = `fade-up-${Math.min(delay, 6)}`;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 24 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, delay: delay * 0.1, ease: 'easeOut' }}
-      whileHover={{ scale: 1.03 }}
-      className={`${gradientClass} rounded-2xl p-5 backdrop-blur-xl cursor-default relative overflow-hidden`}
+    <div
+      className={`kpi-card ${delayClass}`}
+      style={{
+        border: `1px solid ${hex}22`,
+        position: 'relative',
+        overflow: 'hidden',
+      }}
     >
-      <div className="flex items-start justify-between mb-3">
-        <div className={`p-2 rounded-lg ${bgMap[color]}`}>
-          <span className={colorMap[color]}>{icon}</span>
+      {/* Background glow blob */}
+      <div style={{
+        position: 'absolute',
+        top: -20,
+        right: -20,
+        width: 80,
+        height: 80,
+        borderRadius: '50%',
+        background: `${hex}10`,
+        filter: 'blur(20px)',
+        pointerEvents: 'none',
+      }} />
+
+      {/* Header: Icon + Percentage */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 12 }}>
+        <div style={{
+          background: `${hex}18`,
+          borderRadius: 10,
+          padding: 9,
+          border: `1px solid ${hex}25`,
+          display: 'flex',
+        }}>
+          {icon}
         </div>
-        {percentage !== undefined && (
-          <span className={`text-xs font-semibold px-2 py-1 rounded-full ${bgMap[color]} ${colorMap[color]}`}>
+        {percentage != null && (
+          <div style={{
+            background: `${hex}15`,
+            color: hex,
+            fontSize: 11,
+            fontWeight: 700,
+            padding: '3px 10px',
+            borderRadius: 20,
+            border: `1px solid ${hex}30`,
+          }}>
             {percentage}%
-          </span>
+          </div>
         )}
       </div>
 
-      <div className={`text-2xl font-bold ${colorMap[color]} tracking-tight`}>
+      {/* Value */}
+      <div style={{
+        fontSize: 26,
+        fontWeight: 800,
+        color: hex,
+        textShadow: `0 0 20px ${hex}60`,
+        letterSpacing: '-.5px',
+        lineHeight: 1.2,
+      }}>
         {formatValue ? formatValue(animatedValue) : animatedValue.toLocaleString()}
       </div>
 
-      <div className="text-xs text-[#94a3b8] font-medium mt-1">{title}</div>
+      {/* Title */}
+      <div style={{ color: '#CBD5E1', fontSize: 13, marginTop: 4 }}>
+        {title}
+      </div>
 
+      {/* Subtitle */}
       {subtitle && (
-        <div className="text-[11px] text-[#475569] mt-1">{subtitle}</div>
-      )}
-
-      {secondaryLabel && secondaryValue !== undefined && (
-        <div className="text-[11px] text-[#475569] mt-1">
-          {secondaryLabel}: <span className="text-[#94a3b8] font-medium">{secondaryValue.toLocaleString()}</span>
+        <div style={{ color: '#475569', fontSize: 11, marginTop: 2 }}>
+          {subtitle}
         </div>
       )}
-    </motion.div>
+    </div>
   );
 }

@@ -13,10 +13,10 @@ export default function MaintenanceByBUChart({ data }: Props) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.3 }}
-      className="glass-card p-5"
+      className="glass-card"
     >
-      <h3 className="text-sm font-semibold text-[#e2e8f0] mb-1">Maintenance by Business Unit</h3>
-      <p className="text-[11px] text-[#475569] mb-4">Health status per BU</p>
+      <h3 className="chart-title">Maintenance by Business Unit</h3>
+      <p className="chart-sub">Health status per BU</p>
       <ResponsiveContainer width="100%" height={230}>
         <BarChart data={data} margin={{ top: 5, right: 5, bottom: 5, left: 5 }}>
           <XAxis

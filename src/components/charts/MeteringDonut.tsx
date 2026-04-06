@@ -9,18 +9,24 @@ interface Props {
   total: number;
 }
 
+function fmt(n: number): string {
+  if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+  return (n || 0).toLocaleString();
+}
+
 export default function MeteringDonut({ data, total }: Props) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.3 }}
-      className="glass-card p-5"
+      className="glass-card"
     >
-      <h3 className="text-sm font-semibold text-[#e2e8f0] mb-1">Metering Status</h3>
-      <p className="text-[11px] text-[#475569] mb-4">Distribution by metering type</p>
-      <div className="relative">
-        <ResponsiveContainer width="100%" height={200}>
+      <div className="chart-title">Metering Status</div>
+      <div className="chart-sub">Distribution by metering type</div>
+      <div style={{ position: 'relative' }}>
+        <ResponsiveContainer width="100%" height={210}>
           <PieChart>
             <Pie
               data={data}
@@ -30,13 +36,13 @@ export default function MeteringDonut({ data, total }: Props) {
               outerRadius={88}
               paddingAngle={2}
               dataKey="value"
+              labelLine={false}
               label={({ percent }) =>
                 (percent ?? 0) > 0.05 ? `${((percent ?? 0) * 100).toFixed(0)}%` : ''
               }
-              labelLine={false}
             >
               {data.map((entry) => (
-                <Cell key={entry.name} fill={METER_COLORS[entry.name] || '#64748b'} />
+                <Cell key={entry.name} fill={METER_COLORS[entry.name] || '#64748b'} stroke="none" />
               ))}
             </Pie>
             <Tooltip
@@ -50,17 +56,33 @@ export default function MeteringDonut({ data, total }: Props) {
             />
           </PieChart>
         </ResponsiveContainer>
-        {/* Center text */}
-        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <span className="text-xl font-bold text-white">{total.toLocaleString()}</span>
-          <span className="text-[10px] text-[#64748b]">Total DTs</span>
+        {/* Center donut label - matching original */}
+        <div style={{
+          position: 'absolute',
+          top: '50%',
+          left: '50%',
+          transform: 'translate(-50%, -58%)',
+          textAlign: 'center',
+          pointerEvents: 'none',
+        }}>
+          <div style={{
+            fontSize: 22,
+            fontWeight: 800,
+            color: '#06B6D4',
+            textShadow: '0 0 18px rgba(6,182,212,.6)',
+          }}>
+            {fmt(total)}
+          </div>
+          <div style={{ fontSize: 10, color: '#64748B', fontWeight: 500 }}>
+            Total DTs
+          </div>
         </div>
       </div>
       {/* Legend */}
-      <div className="flex justify-center gap-4 mt-2">
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 16, marginTop: 8 }}>
         {data.map((d) => (
-          <div key={d.name} className="flex items-center gap-1.5 text-[11px] text-[#94a3b8]">
-            <div className="w-2.5 h-2.5 rounded-full" style={{ background: METER_COLORS[d.name] }} />
+          <div key={d.name} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#94a3b8' }}>
+            <div style={{ width: 10, height: 10, borderRadius: '50%', background: METER_COLORS[d.name] }} />
             {d.name}: {d.value.toLocaleString()}
           </div>
         ))}

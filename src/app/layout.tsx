@@ -27,7 +27,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${inter.variable} ${jetbrainsMono.variable} dark`}>
-      <body className="min-h-screen bg-[#0a0a0f] text-[#e2e8f0] font-sans antialiased">
+      <body className="min-h-screen bg-[#0F172A] text-white font-sans antialiased">
         {children}
       </body>
     </html>

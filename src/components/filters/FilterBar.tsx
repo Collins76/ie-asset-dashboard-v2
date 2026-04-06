@@ -1,40 +1,61 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useDashboard } from '@/lib/store';
 import {
   BUS, BANDS, MAINTENANCE_LABELS, METERING_LABELS,
   VOLTAGE_LABELS, OWNERSHIP_LABELS, INSTALLATION_LABELS,
   COMMISSIONING_LABELS, BU_COLORS,
 } from '@/lib/constants';
-import type { FilterState } from '@/types/dashboard';
 
 interface MultiSelectProps {
   label: string;
-  options: { label: string; value: string | number }[];
+  options: string[];
   selected: (string | number)[];
   onChange: (values: (string | number)[]) => void;
   colorMap?: Record<string, string>;
   searchable?: boolean;
+  strMode?: boolean;
 }
 
-function MultiSelect({ label, options, selected, onChange, colorMap, searchable }: MultiSelectProps) {
+function MultiSelect({ label, options, selected, onChange, colorMap, searchable, strMode }: MultiSelectProps) {
   const [open, setOpen] = useState(false);
-  const [search, setSearch] = useState('');
-  const ref = useRef<HTMLDivElement>(null);
+  const [menuStyle, setMenuStyle] = useState<React.CSSProperties>({});
+  const [sq, setSq] = useState('');
+  const btnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    if (!open) return;
+    function close(e: MouseEvent) {
+      if (btnRef.current && !btnRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
     }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+    document.addEventListener('mousedown', close);
+    return () => document.removeEventListener('mousedown', close);
+  }, [open]);
 
-  const filtered = searchable && search
-    ? options.filter((o) => String(o.label).toLowerCase().includes(search.toLowerCase()))
-    : options;
+  const handleOpen = () => {
+    if (open) { setOpen(false); return; }
+    const r = btnRef.current!.getBoundingClientRect();
+    const mw = 240;
+    const left = r.left + mw > window.innerWidth ? r.right - mw : r.left;
+    setMenuStyle({
+      position: 'fixed',
+      top: r.bottom + 4,
+      left: Math.max(8, left),
+      width: mw,
+      zIndex: 999999,
+    });
+    setOpen(true);
+    setSq('');
+  };
+
+  const allSel = selected.length === 0;
+  const dispItems = options
+    .map((opt, i) => ({ opt, val: strMode ? opt : i }))
+    .filter(({ opt }) => !sq || opt.toLowerCase().includes(sq.toLowerCase()));
 
   const toggle = (val: string | number) => {
     onChange(
@@ -45,191 +66,232 @@ function MultiSelect({ label, options, selected, onChange, colorMap, searchable 
   };
 
   return (
-    <div className="relative" ref={ref}>
+    <>
       <button
-        onClick={() => setOpen(!open)}
-        className={`
-          flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium
-          transition-all duration-200 whitespace-nowrap
-          ${selected.length > 0
-            ? 'bg-cyan-500/15 text-cyan-300 border border-cyan-500/30'
-            : 'bg-white/[0.05] text-[#94a3b8] border border-white/10 hover:border-white/20'
-          }
-        `}
+        ref={btnRef}
+        onClick={handleOpen}
+        className="btn btn-secondary"
+        style={{ minWidth: 134 }}
       >
-        {label}
-        {selected.length > 0 && (
-          <span className="bg-cyan-500/30 text-cyan-200 text-[10px] px-1.5 py-0.5 rounded-full font-bold">
-            {selected.length}
-          </span>
-        )}
-        <svg className={`w-3 h-3 transition-transform ${open ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+        <span style={{ color: '#94A3B8', fontSize: 11 }}>{label}:</span>
+        <span style={{ color: '#E2E8F0', fontWeight: 600 }}>
+          {allSel ? 'All' : `${selected.length} sel.`}
+        </span>
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{
+          transition: 'transform .2s',
+          transform: open ? 'rotate(180deg)' : '',
+        }}>
+          <path d="M2 3.5L5 6.5L8 3.5" stroke="#64748B" strokeWidth="1.5" strokeLinecap="round" />
         </svg>
       </button>
 
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, y: -8, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.95 }}
-            transition={{ duration: 0.15 }}
-            className="absolute top-full left-0 mt-1 z-50 min-w-[200px] max-h-[280px] overflow-y-auto
-              bg-[#0f172a]/98 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl"
+      {open && createPortal(
+        <div
+          style={{
+            ...menuStyle,
+            background: '#1E293B',
+            border: '1px solid rgba(255,255,255,.12)',
+            borderRadius: 10,
+            boxShadow: '0 16px 48px rgba(0,0,0,.7)',
+            maxHeight: 320,
+            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+          onMouseDown={(e) => e.stopPropagation()}
+        >
+          {searchable && (
+            <div style={{ padding: '6px 8px', borderBottom: '1px solid rgba(255,255,255,.06)' }}>
+              <input
+                type="text"
+                placeholder="Search..."
+                value={sq}
+                onChange={(e) => setSq(e.target.value)}
+                autoFocus
+                style={{
+                  width: '100%',
+                  background: '#0F172A',
+                  border: '1px solid rgba(255,255,255,.12)',
+                  borderRadius: 6,
+                  padding: '4px 8px',
+                  fontSize: 11,
+                  color: 'white',
+                  outline: 'none',
+                }}
+              />
+            </div>
+          )}
+
+          {/* All (clear) option */}
+          <div
+            onClick={() => onChange([])}
+            style={{
+              padding: '8px 12px',
+              cursor: 'pointer',
+              fontSize: 12,
+              color: allSel ? '#06B6D4' : '#64748B',
+              fontStyle: 'italic',
+              borderBottom: '1px solid rgba(255,255,255,.06)',
+            }}
           >
-            {searchable && (
-              <div className="p-2 border-b border-white/[0.07]">
-                <input
-                  type="text"
-                  placeholder="Search..."
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-1.5 text-xs text-white outline-none focus:border-cyan-500/50"
-                />
-              </div>
-            )}
-            {filtered.map((opt) => (
+            All (clear filter)
+          </div>
+
+          {dispItems.map(({ opt, val }) => {
+            const isSel = selected.includes(val);
+            return (
               <div
-                key={String(opt.value)}
-                onClick={() => toggle(opt.value)}
-                className="flex items-center gap-2.5 px-3 py-2 cursor-pointer hover:bg-white/[0.05] transition-colors"
+                key={String(val)}
+                onClick={() => toggle(val)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  padding: '9px 14px',
+                  cursor: 'pointer',
+                  transition: 'background .15s',
+                  background: isSel ? 'rgba(6,182,212,.08)' : 'transparent',
+                  fontSize: 12,
+                  color: '#CBD5E1',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'rgba(255,255,255,.07)')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = isSel ? 'rgba(6,182,212,.08)' : 'transparent')}
               >
-                <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
-                  selected.includes(opt.value) ? 'bg-cyan-500 border-cyan-500' : 'border-white/20'
-                }`}>
-                  {selected.includes(opt.value) && (
-                    <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                <div style={{
+                  width: 16, height: 16, borderRadius: 4,
+                  border: isSel ? '2px solid #06B6D4' : '2px solid rgba(255,255,255,.2)',
+                  background: isSel ? '#06B6D4' : 'transparent',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  flexShrink: 0,
+                }}>
+                  {isSel && (
+                    <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                      <path d="M2 5L4 7L8 3" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   )}
                 </div>
-                {colorMap && colorMap[opt.label] && (
-                  <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: colorMap[opt.label] }} />
+                {colorMap && colorMap[opt] && (
+                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: colorMap[opt], flexShrink: 0 }} />
                 )}
-                <span className="text-xs text-[#cbd5e1] truncate">{opt.label}</span>
+                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{opt}</span>
               </div>
-            ))}
-            {filtered.length === 0 && (
-              <div className="px-3 py-4 text-xs text-[#475569] text-center">No matches</div>
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+            );
+          })}
+
+          {dispItems.length === 0 && (
+            <div style={{ padding: '12px', fontSize: 11, color: '#475569', textAlign: 'center' }}>No matches</div>
+          )}
+        </div>,
+        document.body
+      )}
+    </>
   );
 }
 
 export default function FilterBar() {
-  const { filters, setFilter, resetFilters, hasActiveFilters, filterOptions } = useDashboard();
+  const { filters, setFilter, resetFilters, hasActiveFilters, filterOptions, filteredData, allData } = useDashboard();
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: -10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="sticky top-0 z-30 bg-[#0a0a0f]/90 backdrop-blur-xl border-b border-white/[0.07] px-6 py-3"
-    >
-      <div className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-1">
-        <span className="text-[10px] font-bold text-[#475569] uppercase tracking-widest shrink-0 mr-1">Filters</span>
+    <div style={{
+      background: 'rgba(15,23,42,.7)',
+      borderBottom: '1px solid rgba(255,255,255,.05)',
+    }}>
+      <div style={{
+        maxWidth: 1600,
+        margin: '0 auto',
+        padding: '10px 24px',
+        display: 'flex',
+        gap: 8,
+        flexWrap: 'wrap',
+        alignItems: 'center',
+      }}>
+        <span style={{
+          fontSize: 10,
+          fontWeight: 700,
+          color: '#475569',
+          letterSpacing: 1.2,
+          textTransform: 'uppercase',
+          marginRight: 4,
+        }}>
+          FILTERS
+        </span>
 
         <MultiSelect
-          label="BU"
-          options={BUS.map((b, i) => ({ label: b, value: i }))}
+          label="Business Unit"
+          options={[...BUS]}
           selected={filters.bu}
           onChange={(v) => setFilter('bu', v as number[])}
-          colorMap={Object.fromEntries(BUS.map((b) => [b, BU_COLORS[b]]))}
+          colorMap={BU_COLORS}
         />
-
         <MultiSelect
           label="SRT Band"
-          options={BANDS.map((b, i) => ({ label: b, value: i }))}
+          options={[...BANDS]}
           selected={filters.band}
           onChange={(v) => setFilter('band', v as number[])}
         />
-
         <MultiSelect
           label="Maintenance"
-          options={MAINTENANCE_LABELS.slice(0, 3).map((l, i) => ({ label: l, value: i }))}
+          options={[...MAINTENANCE_LABELS].slice(0, 3)}
           selected={filters.maintenance}
           onChange={(v) => setFilter('maintenance', v as number[])}
         />
-
         <MultiSelect
           label="Metering"
-          options={METERING_LABELS.map((l, i) => ({ label: l, value: i }))}
+          options={[...METERING_LABELS]}
           selected={filters.metering}
           onChange={(v) => setFilter('metering', v as number[])}
         />
-
         <MultiSelect
           label="Voltage"
-          options={VOLTAGE_LABELS.map((l, i) => ({ label: l, value: i }))}
+          options={[...VOLTAGE_LABELS]}
           selected={filters.voltage}
           onChange={(v) => setFilter('voltage', v as number[])}
         />
-
         <MultiSelect
           label="Ownership"
-          options={OWNERSHIP_LABELS.map((l, i) => ({ label: l, value: i }))}
+          options={[...OWNERSHIP_LABELS]}
           selected={filters.ownership}
           onChange={(v) => setFilter('ownership', v as number[])}
         />
-
         <MultiSelect
           label="Installation"
-          options={INSTALLATION_LABELS.slice(0, 2).map((l, i) => ({ label: l, value: i }))}
+          options={[...INSTALLATION_LABELS].slice(0, 2)}
           selected={filters.installation}
           onChange={(v) => setFilter('installation', v as number[])}
         />
-
         <MultiSelect
-          label="Commission"
-          options={COMMISSIONING_LABELS.slice(0, 2).map((l, i) => ({ label: l, value: i }))}
+          label="Commissioning"
+          options={[...COMMISSIONING_LABELS].slice(0, 2)}
           selected={filters.commissioning}
           onChange={(v) => setFilter('commissioning', v as number[])}
         />
 
         {filterOptions && (
           <>
-            <MultiSelect
-              label="State"
-              options={filterOptions.states.map((s) => ({ label: s, value: s }))}
-              selected={filters.state}
-              onChange={(v) => setFilter('state', v as string[])}
-              searchable
-            />
-            <MultiSelect
-              label="UT"
-              options={filterOptions.uts.map((u) => ({ label: u, value: u }))}
-              selected={filters.ut}
-              onChange={(v) => setFilter('ut', v as string[])}
-              searchable
-            />
-            <MultiSelect
-              label="Feeder"
-              options={filterOptions.feeders.map((f) => ({ label: f, value: f }))}
-              selected={filters.feeder}
-              onChange={(v) => setFilter('feeder', v as string[])}
-              searchable
-            />
-            <MultiSelect
-              label="Year"
-              options={filterOptions.years.map((y) => ({ label: y, value: y }))}
-              selected={filters.year}
-              onChange={(v) => setFilter('year', v as string[])}
-            />
+            <MultiSelect label="State" options={filterOptions.states} selected={filters.state} onChange={(v) => setFilter('state', v as string[])} strMode searchable />
+            <MultiSelect label="UT" options={filterOptions.uts} selected={filters.ut} onChange={(v) => setFilter('ut', v as string[])} strMode searchable />
+            <MultiSelect label="Feeder" options={filterOptions.feeders} selected={filters.feeder} onChange={(v) => setFilter('feeder', v as string[])} strMode searchable />
+            <MultiSelect label="Year" options={filterOptions.years} selected={filters.year} onChange={(v) => setFilter('year', v as string[])} strMode />
           </>
         )}
 
-        {hasActiveFilters && (
-          <button
-            onClick={resetFilters}
-            className="shrink-0 px-3 py-2 rounded-lg text-xs font-medium bg-red-500/15 text-red-400 border border-red-500/25 hover:bg-red-500/25 transition-colors"
-          >
-            Clear All
-          </button>
-        )}
+        {/* Right: Count + Clear */}
+        <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 10, fontSize: 12 }}>
+          <span style={{ color: '#64748B' }}>
+            Showing: <span style={{ color: '#06B6D4', fontWeight: 700 }}>{filteredData.length.toLocaleString()}</span>
+            <span style={{ color: '#475569' }}> / {allData.length.toLocaleString()}</span>
+          </span>
+          {hasActiveFilters && (
+            <button
+              onClick={resetFilters}
+              className="btn btn-danger"
+              style={{ fontSize: 11, padding: '5px 12px' }}
+            >
+              ✕ Clear all
+            </button>
+          )}
+        </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

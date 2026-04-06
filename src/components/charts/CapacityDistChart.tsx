@@ -14,10 +14,10 @@ export default function CapacityDistChart({ data }: Props) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: 0.4 }}
-      className="glass-card p-5"
+      className="glass-card"
     >
-      <h3 className="text-sm font-semibold text-[#e2e8f0] mb-1">Capacity Distribution</h3>
-      <p className="text-[11px] text-[#475569] mb-4">Transformer capacity ranges</p>
+      <h3 className="chart-title">Capacity Distribution</h3>
+      <p className="chart-sub">Transformer capacity ranges</p>
       <ResponsiveContainer width="100%" height={180}>
         <PieChart>
           <Pie
