@@ -2,10 +2,47 @@
 
 import { useCallback } from 'react';
 import Image from 'next/image';
+import { useSession, signOut } from 'next-auth/react';
 import Sidebar from '@/components/ui/Sidebar';
 import FilterBar from '@/components/filters/FilterBar';
 import { DashboardProvider, useDashboard } from '@/lib/store';
 import { generateCSV } from '@/lib/data';
+
+function ResetButton() {
+  const { resetFilters } = useDashboard();
+  return (
+    <button className="btn btn-danger" onClick={resetFilters} title="Reset all filters">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <style>{`@keyframes spin-reset{0%{transform:rotate(0)}100%{transform:rotate(360deg)}}`}</style>
+        <polyline points="23 4 23 10 17 10" /><polyline points="1 20 1 14 7 14" />
+        <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
+      </svg>
+      Reset
+    </button>
+  );
+}
+
+function UserMenu() {
+  const { data: session } = useSession();
+  if (!session?.user) return null;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      {session.user.image && (
+        <img src={session.user.image} alt="" width={28} height={28} style={{ borderRadius: '50%', border: '2px solid rgba(255,255,255,.1)' }} />
+      )}
+      <span style={{ fontSize: 11, color: '#94a3b8', maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {session.user.name || session.user.email}
+      </span>
+      <button
+        onClick={() => signOut({ callbackUrl: '/login' })}
+        className="btn btn-secondary"
+        style={{ fontSize: 10, padding: '4px 10px' }}
+      >
+        Sign Out
+      </button>
+    </div>
+  );
+}
 
 function DashboardHeader() {
   const { filteredData, allData } = useDashboard();
@@ -66,6 +103,8 @@ function DashboardHeader() {
           </div>
           <button className="btn btn-secondary" onClick={handleCSV}>⬇ CSV</button>
           <button className="btn btn-pdf">📄 PDF Report</button>
+          <ResetButton />
+          <UserMenu />
         </div>
       </div>
     </div>

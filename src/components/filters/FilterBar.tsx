@@ -272,6 +272,7 @@ export default function FilterBar() {
             <MultiSelect label="UT" options={filterOptions.uts} selected={filters.ut} onChange={(v) => setFilter('ut', v as string[])} strMode searchable />
             <MultiSelect label="Feeder" options={filterOptions.feeders} selected={filters.feeder} onChange={(v) => setFilter('feeder', v as string[])} strMode searchable />
             <MultiSelect label="Year" options={filterOptions.years} selected={filters.year} onChange={(v) => setFilter('year', v as string[])} strMode />
+            <MultiSelect label="DT Name" options={filterOptions.dtNames.slice(0, 500)} selected={filters.dtName} onChange={(v) => setFilter('dtName', v as string[])} strMode searchable />
           </>
         )}
 
