@@ -8,9 +8,17 @@ const SUPABASE_NETWORK_URL = 'https://blxuwvxitbbjhzgucvhp.supabase.co/storage/v
 const BUS = ['ABULE EGBA', 'AKOWONJO', 'IKEJA', 'IKORODU', 'OSHODI', 'SHOMOLU'];
 const BANDS = ['Band A', 'Band B', 'Band C', 'Band D', 'Band E', 'Unknown'];
 
+// Coordinate corrections for DTs with known bad coordinates
+const COORD_FIXES: Record<string, { lat: number; lng: number }> = {
+  '11-MongoroINJ-T1-New Dopemu-OGUNTELURE OLUSOYE ISAAC': { lat: 6.60754999205525, lng: 3.32021155467531 },
+};
+
 // Convert a Supabase JSON record to compact array format [20 fields]
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function toCompact(r: any): any[] {
+  const nom = String(r.nom || r.name || '');
+  const fix = COORD_FIXES[nom];
+  if (fix) { r.lat = fix.lat; r.lng = fix.lng; }
   const buIdx = Math.max(0, BUS.findIndex((b) => b === String(r.bu || '').toUpperCase()));
   const bandIdx = BANDS.findIndex((b) => b === String(r.srt || ''));
 
