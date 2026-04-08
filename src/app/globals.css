@@ -162,18 +162,30 @@ table.dt-table tr:hover td { background: rgba(255,255,255,.025); }
 .dark-tiles .leaflet-tile { filter: none; }
 
 /* UT Boundary Labels */
-.ut-label {
-  background: rgba(15, 23, 42, 0.85) !important;
-  color: #e2e8f0 !important;
-  border: 1px solid rgba(100, 116, 139, 0.6) !important;
-  border-radius: 4px !important;
-  padding: 3px 8px !important;
-  font-size: 12px !important;
-  font-weight: 600 !important;
-  letter-spacing: 0.02em !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+.leaflet-tooltip-pane {
   filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+.leaflet-tooltip.ut-label {
+  background: #fff !important;
+  color: #1e293b !important;
+  border: 1px solid #94a3b8 !important;
+  border-radius: 4px !important;
+  padding: 2px 8px !important;
+  font-family: 'Inter', sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.03em !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5) !important;
+  filter: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  opacity: 1 !important;
   white-space: nowrap !important;
+}
+.leaflet-tooltip.ut-label::before {
+  display: none !important;
 }
 
 /* HT line flowing animation */
