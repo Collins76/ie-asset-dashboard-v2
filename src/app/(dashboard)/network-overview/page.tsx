@@ -92,7 +92,7 @@ export default function NetworkOverviewPage() {
               onEachFeature: (feature: any, layer: any) => {
                 const name = feature.properties?.name || '';
                 if (name) {
-                  layer.bindTooltip(name, { permanent: true, direction: 'center', className: 'ut-label', opacity: 0.85 });
+                  layer.bindTooltip(name, { permanent: true, direction: 'center', className: 'ut-label', opacity: 1 });
                   layer.bindPopup(`<b style="color:#64748b">${name}</b><br>UT Boundary`);
                 }
                 layer.on('mouseover', function(this: any) { this.setStyle({ weight: 4, fillOpacity: 0.2 }); });

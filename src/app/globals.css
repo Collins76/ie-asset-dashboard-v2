@@ -161,6 +161,21 @@ table.dt-table tr:hover td { background: rgba(255,255,255,.025); }
 .leaflet-tile { filter: brightness(.65) saturate(.5); }
 .dark-tiles .leaflet-tile { filter: none; }
 
+/* UT Boundary Labels */
+.ut-label {
+  background: rgba(15, 23, 42, 0.85) !important;
+  color: #e2e8f0 !important;
+  border: 1px solid rgba(100, 116, 139, 0.6) !important;
+  border-radius: 4px !important;
+  padding: 3px 8px !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.02em !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+  filter: none !important;
+  white-space: nowrap !important;
+}
+
 /* HT line flowing animation */
 @keyframes ht-flow { 0% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: -26; } }
 path.ht-flow, svg .ht-flow, .leaflet-overlay-pane path.ht-flow {
