@@ -101,6 +101,11 @@ export function convertSupabaseRecord(r: any): TransformerRecord {
   };
 }
 
+// Coordinate corrections for DTs with known bad coordinates
+const COORD_FIXES: Record<string, { lat: number; lon: number }> = {
+  '11-MongoroINJ-T1-New Dopemu-OGUNTELURE OLUSOYE ISAAC': { lat: 6.60754999205525, lon: 3.32021155467531 },
+};
+
 // Detect data format and parse accordingly
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function parseRecords(data: any[]): TransformerRecord[] {
@@ -108,11 +113,16 @@ export function parseRecords(data: any[]): TransformerRecord[] {
 
   // Check if first record is an array (compact) or object (Supabase JSON)
   const first = data[0];
-  if (Array.isArray(first)) {
-    return data.map((r) => expandRecord(r as CompactRecord));
+  const records = Array.isArray(first)
+    ? data.map((r) => expandRecord(r as CompactRecord))
+    : data.map(convertSupabaseRecord);
+
+  for (const r of records) {
+    const fix = COORD_FIXES[r.name];
+    if (fix) { r.lat = fix.lat; r.lon = fix.lon; }
   }
-  // Object format from Supabase
-  return data.map(convertSupabaseRecord);
+
+  return records;
 }
 
 // Normalize UT names
